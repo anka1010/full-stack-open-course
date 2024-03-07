@@ -1,0 +1,11 @@
+sequenceDiagram
+Browser->>+Server: Request "POST", payload="note=123"
+Server-->>+Browser: Redirect to "https://studies.cs.helsinki.fi/exampleapp/notes"
+Browser->>+Server: Request "GET", url="https://studies.cs.helsinki.fi/exampleapp/notes"
+Server-->>+Browser: Response status 200 Ok, Content-Type="text/html"
+Browser->>+Server: Request "GET", url="https://studies.cs.helsinki.fi/exampleapp/main.css"
+Server-->>+Browser: Response status 200 Ok, Content-Type="text/css"
+Browser->>+Server: Request "GET", url="https://studies.cs.helsinki.fi/exampleapp/main.js"
+Server-->>+Browser: Response status 200 Ok, Content-Type="application/javascript"
+Browser->>+Server: Request "GET", url="https://studies.cs.helsinki.fi/exampleapp/data.json"
+Server-->>+Browser: Response status 200 Ok, Content-Type="application/json"
