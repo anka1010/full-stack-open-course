@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import axios from "axios";
+import personService from "./services/person";
 
 function Filter({ filterName, handleFilterName }) {
   return (
@@ -32,36 +32,34 @@ function NewContact({
   );
 }
 
-function Contacts({ filteredPersons }) {
+function Contacts({ filteredPersons, handleDeletePerson }) {
   return (
     <div>
       {filteredPersons.map((person) => (
-        <Contact key={person.id} person={person} />
+        <Contact
+          key={person.id}
+          person={person}
+          handleDeletePerson={handleDeletePerson}
+        />
       ))}
     </div>
   );
 }
 
-function Contact({ person }) {
+function Contact({ person, handleDeletePerson }) {
   return (
     <p>
-      {person.name} {person.phoneNumber}
+      {person.name} {person.number}{" "}
+      <button onClick={() => handleDeletePerson(person.id)}>delete</button>
     </p>
   );
 }
 
 function App() {
-  const [persons, setPersons] = useState([
-    // { name: "Arto Hellas", phoneNumber: "040-123456", id: 1 },
-    // { name: "Ada Lovelace", phoneNumber: "39-44-5323523", id: 2 },
-    // { name: "Dan Abramov", phoneNumber: "12-43-234345", id: 3 },
-    // { name: "Mary Poppendieck", phoneNumber: "39-23-6423122", id: 4 },
-  ]);
+  const [persons, setPersons] = useState([]);
 
   useEffect(() => {
-    axios
-      .get("http://localhost:3001/persons")
-      .then((response) => setPersons(response.data));
+    personService.getAll().then((allPersons) => setPersons(allPersons));
   }, []);
 
   const [newName, setNewName] = useState("");
@@ -94,20 +92,38 @@ function App() {
       return;
     }
 
-    if (persons.find((person) => person.name === newName)) {
-      alert(`${newName} is already added to phonebook.`);
-      return;
+    const existingPerson = persons.find((person) => person.name === newName);
+    if (existingPerson) {
+      if (
+        !window.confirm(
+          `${newName} is already added to phonebook, replace the old number with a new one?`
+        )
+      )
+        return;
+
+      existingPerson.number = newPhoneNumber;
+      personService.update(existingPerson.id, existingPerson);
+    } else {
+      const newPerson = {
+        name: newName,
+        number: newPhoneNumber,
+      };
+
+      personService.addNew(newPerson).then((addedPerson) => {
+        setPersons(persons.concat(addedPerson));
+      });
     }
 
-    setPersons(
-      persons.concat({
-        name: newName,
-        phoneNumber: newPhoneNumber,
-        id: persons.length + 1,
-      })
-    );
     setNewName("");
     setNewPhoneNumber("");
+  }
+
+  function handleDeletePerson(id) {
+    const deletedItem = persons.find((person) => person.id === id);
+    if (!window.confirm(`delete ${deletedItem.name}?`)) return;
+
+    personService.deleteItem(id);
+    setPersons(() => persons.filter((person) => person.id !== deletedItem.id));
   }
 
   return (
@@ -125,9 +141,37 @@ function App() {
       />
 
       <h2>Numbers</h2>
-      <Contacts filteredPersons={filteredPersons} />
+      <Contacts
+        filteredPersons={filteredPersons}
+        handleDeletePerson={handleDeletePerson}
+      />
     </div>
   );
 }
 
 export default App;
+
+// {
+//   "persons": [
+//     {
+//       "name": "Arto Hellas",
+//       "number": "040-123456",
+//       "id": 1
+//     },
+//     {
+//       "name": "Ada Lovelace",
+//       "number": "39-44-5323523",
+//       "id": 2
+//     },
+//     {
+//       "name": "Dan Abramov",
+//       "number": "12-43-234345",
+//       "id": 3
+//     },
+//     {
+//       "name": "Mary Poppendieck",
+//       "number": "39-23-6423122",
+//       "id": 4
+//     }
+//   ]
+// }
