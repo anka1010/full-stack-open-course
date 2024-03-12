@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import personService from "./services/person";
+import PersonService from "./services/person";
+import Notification from "./components/Notification";
 
 function Filter({ filterName, handleFilterName }) {
   return (
@@ -59,12 +60,14 @@ function App() {
   const [persons, setPersons] = useState([]);
 
   useEffect(() => {
-    personService.getAll().then((allPersons) => setPersons(allPersons));
+    PersonService.getAll().then((allPersons) => setPersons(allPersons));
   }, []);
 
   const [newName, setNewName] = useState("");
   const [newPhoneNumber, setNewPhoneNumber] = useState("");
   const [filterName, setFilterName] = useState("");
+  const [successMesasge, setSuccessMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const filteredPersons = filterName
     ? persons.filter((person) =>
@@ -102,15 +105,27 @@ function App() {
         return;
 
       existingPerson.number = newPhoneNumber;
-      personService.update(existingPerson.id, existingPerson);
+      PersonService.update(existingPerson.id, existingPerson)
+        .then((updatedPerson) => {
+          setSuccessMessage(`${updatedPerson.name} phone number is updated`);
+          setTimeout(() => setSuccessMessage(""), 2000);
+        })
+        .catch((error) => {
+          setErrorMessage(
+            `information of ${existingPerson.name} has already been removed from the server`
+          );
+          setTimeout(() => setErrorMessage(""), 2000);
+        });
     } else {
       const newPerson = {
         name: newName,
         number: newPhoneNumber,
       };
 
-      personService.addNew(newPerson).then((addedPerson) => {
+      PersonService.addNew(newPerson).then((addedPerson) => {
         setPersons(persons.concat(addedPerson));
+        setSuccessMessage(`${addedPerson.name} is added to phonebook`);
+        setTimeout(() => setSuccessMessage(""), 2000);
       });
     }
 
@@ -122,13 +137,29 @@ function App() {
     const deletedItem = persons.find((person) => person.id === id);
     if (!window.confirm(`delete ${deletedItem.name}?`)) return;
 
-    personService.deleteItem(id);
-    setPersons(() => persons.filter((person) => person.id !== deletedItem.id));
+    PersonService.deleteItem(id)
+      .then((response) => {
+        setSuccessMessage(
+          `${deletedItem.name} has been removed from phonebook`
+        );
+        setTimeout(() => setSuccessMessage(""), 2000);
+        setPersons(() =>
+          persons.filter((person) => person.id !== deletedItem.id)
+        );
+      })
+      .catch((error) => {
+        setErrorMessage(
+          `information of ${deletedItem.name} has already been removed from the server`
+        );
+        setTimeout(() => setErrorMessage(""), 2000);
+      });
   }
 
   return (
     <div>
       <h1>Phonebook</h1>
+      <Notification message={successMesasge} style={"success"} />
+      <Notification message={errorMessage} style={"error"} />
       <Filter filterName={filterName} handleFilterName={handleFilterName} />
 
       <h3>Add a new</h3>

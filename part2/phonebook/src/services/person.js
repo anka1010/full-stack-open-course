@@ -18,7 +18,7 @@ function update(id, newObject) {
 }
 
 function deleteItem(id) {
-  axios.delete(`${baseUrl}/${id}`);
+  return axios.delete(`${baseUrl}/${id}`);
 }
 
 export default { getAll, addNew, deleteItem, update };
